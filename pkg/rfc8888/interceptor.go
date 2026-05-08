@@ -17,6 +17,10 @@ import (
 // TickerFactory is a factory to create new tickers.
 type TickerFactory func(d time.Duration) ticker
 
+type ECNLookupTable interface {
+	GetECN(ssrc uint32, sequenceNumber uint16) uint8
+}
+
 // SenderInterceptorFactory is a interceptor.Factory for a SenderInterceptor.
 type SenderInterceptorFactory struct {
 	opts []Option
@@ -74,6 +78,8 @@ type SenderInterceptor struct {
 	newTicker     TickerFactory
 	now           func() time.Time
 	close         chan struct{}
+
+	ecnLookupTable ECNLookupTable
 }
 
 type packet struct {
@@ -118,12 +124,16 @@ func (s *SenderInterceptor) BindRemoteStream(
 		if err != nil {
 			return 0, nil, err
 		}
+		var ecn uint8
+		if s.ecnLookupTable != nil {
+			ecn = s.ecnLookupTable.GetECN(header.SSRC, header.SequenceNumber)
+		}
 
 		p := packet{
 			arrival:        s.now(),
 			ssrc:           header.SSRC,
 			sequenceNumber: header.SequenceNumber,
-			ecn:            0, // ECN is not supported (yet).
+			ecn:            ecn,
 		}
 		s.packetChan <- p
 

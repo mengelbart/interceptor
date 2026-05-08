@@ -47,3 +47,12 @@ func WithLoggerFactory(loggerFactory logging.LoggerFactory) Option {
 		return nil
 	}
 }
+
+// WithECNLookupTable sets the ECN lookup table for the interceptor.
+func WithECNLookupTable(ecnLookupTable ECNLookupTable) Option {
+	return func(i *SenderInterceptor) error {
+		i.ecnLookupTable = ecnLookupTable
+
+		return nil
+	}
+}
